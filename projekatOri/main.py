@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 import os
 
 from keras_preprocessing.image import ImageDataGenerator
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC, SVC
+import matplotlib.pyplot as plt
 
 
 def procesiranje_slike(image, naziv_slike, hog, window_size=(128, 128)):
@@ -89,7 +90,7 @@ def ucitavanje_podataka():
     slike_test_skup = []  # 20% (8 slika) 15% (6 slika u svakoj kategoriji)
     #slike_validacioni_skup = []  # 15% (6 slika u svakoj kategoriji)
 
-    for dirname, _, filenames in os.walk('images'):
+    '''for dirname, _, filenames in os.walk('images'):
         broj_trening_slika = 0.8 * len(filenames)
         broj_test_slika = 0.20 * len(filenames)
         #broj_validacionih_slika = 0.15 * len(filenames)
@@ -111,7 +112,68 @@ def ucitavanje_podataka():
             brojac += 1
 
     #print("Nazivi svih trening slika i broj im je: " + str(len(slike_trening_skup)))
-    return slike_trening_skup, slike_test_skup #, slike_validacioni_skup
+    return slike_trening_skup, slike_test_skup #, slike_validacioni_skup'''
+
+    sve_slike = []
+    jabuke=[]
+    banana=[]
+    cherry=[]
+    chickoo=[]
+    grapes=[]
+    kiwi=[]
+    mango=[]
+    orange=[]
+    strawbery=[]
+
+    for dirname, _, filenames in os.walk('images'):
+
+        for filename in filenames:
+            # print(os.path.join(dirname, filename))
+            # print("Broj slika " + dirname  + " je " + str(len(filenames)))
+            naziv_slike = os.path.join(dirname, filename)
+            niz = dirname.split("\\")
+            if dirname == "images\\apple fruit":
+                jabuke.append(naziv_slike)
+
+            elif dirname == "images\\banana fruit":
+                banana.append(naziv_slike)
+
+            elif dirname == "images\\cherry fruit":
+                cherry.append(naziv_slike)
+
+            elif dirname == "images\\chickoo fruit":
+                chickoo.append(naziv_slike)
+
+            elif dirname == "images\\grapes fruit":
+                grapes.append(naziv_slike)
+
+            elif dirname == "images\\kiwi fruit":
+                kiwi.append(naziv_slike)
+
+            elif dirname == "images\\mango fruit":
+                mango.append(naziv_slike)
+
+            elif dirname == "images\\orange fruit":
+                orange.append(naziv_slike)
+
+            else:
+                strawbery.append(naziv_slike)
+
+    #podela skupa na trening i test
+    trening_jabuke, test_jabuke = train_test_split(jabuke, test_size=0.20, random_state=42)
+    trening_banane, test_banane = train_test_split(banana, test_size=0.20, random_state=42)
+    trening_chery, test_chery = train_test_split(cherry, test_size=0.20, random_state=42)
+    trening_chickoo, test_chickoo = train_test_split(chickoo, test_size=0.20, random_state=42)
+    trening_grapes, test_grapes = train_test_split(grapes, test_size=0.20, random_state=42)
+    trening_kiwi, test_kiwi = train_test_split(kiwi, test_size=0.20, random_state=42)
+    trening_mango, test_mango = train_test_split(mango, test_size=0.20, random_state=42)
+    trening_orange, test_orange = train_test_split(orange, test_size=0.20, random_state=42)
+    trening_strawbery, test_strawbery = train_test_split(strawbery, test_size=0.20, random_state=42)
+
+    ceo_trening = trening_jabuke + trening_banane + trening_chery + trening_chickoo + trening_grapes + trening_kiwi + trening_mango + trening_orange + trening_strawbery
+    ceo_test = test_jabuke + test_banane + test_chickoo + test_chery + test_grapes + test_kiwi + test_mango + test_orange + test_strawbery
+
+    return ceo_trening, ceo_test
 
 
 def hog_priprema(skup_podataka, sirina_resize, visina_resize):
@@ -210,6 +272,32 @@ def vrati_format(skup):
         #skup[naziv] = slika
     return skup
 
+def iscrtavanje_graifika_tacnosti_po_klasama(dobijeni_rezultati, tacni_rezultati):
+    # Generisanje izveštaja klasifikacije
+    izvestaj = classification_report(dobijeni_rezultati, tacni_rezultati, output_dict=True)
+
+    # Izdvajanje tačnosti za svaku klasu iz izveštaja
+    nazivi_klasa = list(izvestaj.keys())[:-3]  # Izuzmite ukupne vrednosti iz izveštaja
+    tacnosti = [izvestaj[naziv_klase]['precision'] for naziv_klase in nazivi_klasa]
+
+    # Nacrtajte grafik tačnosti
+    plt.bar(nazivi_klasa, tacnosti)
+    plt.xlabel('Klase')
+    plt.ylabel('Tačnost')
+    plt.title('Tačnost po klasama')
+    plt.ylim([0, 1])  # Postavite granice y-ose
+    plt.show()
+
+def grafik_tacnosti(c_vrednosti, tacnosti_trening, tacnosti_test):
+    #Prikaz grafika tacnosti za variranje razlicitih paramtera c
+    # Crtanje linijastog grafikona
+    plt.plot(c_vrednosti, tacnosti_trening, marker='o', linestyle='-',  linewidth=3, label='Trening skup')
+    plt.plot(c_vrednosti, tacnosti_test, marker='o', linestyle='-', linewidth=3, label='Test skup')
+    plt.xlabel('C')
+    plt.ylabel('Tacnost')
+    plt.title('Tacnost SVM klasifikatora sa HOG pristupom')
+    plt.legend()
+    plt.show()
 
 if __name__ == '__main__':
 
@@ -234,7 +322,7 @@ if __name__ == '__main__':
     x, y, hog = hog_priprema(trening_skup, sirina_resize, visina_resize)
 
     ######### PODELA TRENING SKUPA NA SKUP ZA OBUCAVANJE I VALIDACIONI SKUP #########
-    x_treniranje, x_validacija, y_treniranje, y_validacija = train_test_split(x, y, test_size=0.05, random_state=42)
+    x_treniranje, x_validacija, y_treniranje, y_validacija = train_test_split(x, y, test_size=0.05, random_state=42) #0.05
     print('Trening shape: ', x_treniranje.shape, y_treniranje.shape)
     print('Validacija shape: ', x_validacija.shape, y_validacija.shape)
 
@@ -245,46 +333,80 @@ if __name__ == '__main__':
     print('Test shape: ', x_validacija.shape, y_validacija.shape)
 
     ############ OBUCAVANJE KLASIFIKATORA #############
+    #inicjalizacija tacnosti treniranja u epohama
+
     print("Treniranje klasifikatora...")
-    classifier = SVC(kernel="poly", C=1)
-    classifier.fit(x_treniranje, y_treniranje)
-    y_train_pred = classifier.predict(x_treniranje)
-    y_test_pred = classifier.predict(x_validacija)
-    print("Treniranje accuracy: ", accuracy_score(y_treniranje, y_train_pred))
-    print("Validacija accuracy: ", accuracy_score(y_validacija, y_test_pred))
 
-    ########### TESTIRANJE ###########
-    test_skup = ucitavanje_slika(test_skup_putanje) #ucitavanje podataka za testiranje
+    tacnosti_treniranje = []
+    tacnosti_testiranje = []
 
-    ## resenje ##
-    ukupan_broj_slika_testiranje = 0
-    broj_tacno_pogodjenih = 0
+    #probacemo da treniramo klasifikator za razlicite vrendosti parametra c
+    c_vred=[0.01, 0.05, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 20, 50, 100]
 
-    print("************ RESENJE *************")
-    print("<naziv slike> - <tacno resenje> - <dobijena predikcija>")
-    print("")
-
-    for naziv,slika in test_skup.items():
-
-        ukupan_broj_slika_testiranje += 1
-
-        #izdvajanje podataka o nazivu slike
-        niz = naziv.split(",")
-        tacan_rezultat_predikcije = niz[1]
-        naziv_slike = niz[0]
+    for c in c_vred:
+        classifier = SVC(kernel="poly", C=c) #najbolji je za C=1
+        classifier.fit(x_treniranje, y_treniranje)
+        y_train_pred = classifier.predict(x_treniranje)
+        y_test_pred = classifier.predict(x_validacija)
+        treniranje_tacnost = accuracy_score(y_treniranje, y_train_pred)
+        print("Treniranje accuracy: ", treniranje_tacnost)
+        print("Validacija accuracy: ", accuracy_score(y_validacija, y_test_pred))
+        #print("Lista tacnosti je: ", str(tacnost_treniranja.trening_tacnost))
+        tacnosti_treniranje.append(treniranje_tacnost)
 
 
-        dobijeni_rezultat_predikcije = procesiranje_slike(slika, naziv_slike, hog)
+        ########### TESTIRANJE ###########
+        test_skup = ucitavanje_slika(test_skup_putanje) #ucitavanje podataka za testiranje
 
-        print(naziv_slike + " - " +  tacan_rezultat_predikcije + " - " + dobijeni_rezultat_predikcije[0])
+        ## resenje ##
+        ukupan_broj_slika_testiranje = 0
+        broj_tacno_pogodjenih = 0
+        dobijeni_rezultati = []
+        tacni_rezultati = []
 
-        #provera da li je pogodjenrezultat prodikcije
-        if (dobijeni_rezultat_predikcije[0] == tacan_rezultat_predikcije):
-            broj_tacno_pogodjenih += 1 #povecavamo broj tacno pogodjenih slika
+        print("************ RESENJE *************")
+        print("<naziv slike> - <tacno resenje> - <dobijena predikcija>")
+        print("")
 
-    ########### racunanje procenta tacnosti #########
-    accuracy = 100 * broj_tacno_pogodjenih / ukupan_broj_slika_testiranje
-    print("**** Accuracy je: ", accuracy, "%")
+        for naziv,slika in test_skup.items():
+
+            ukupan_broj_slika_testiranje += 1
+
+            #izdvajanje podataka o nazivu slike
+            niz = naziv.split(",")
+            tacan_rezultat_predikcije = niz[1]
+            naziv_slike = niz[0]
 
 
+            dobijeni_rezultat_predikcije = procesiranje_slike(slika, naziv_slike, hog)
+
+            print(naziv_slike + " - " +  tacan_rezultat_predikcije + " - " + dobijeni_rezultat_predikcije[0])
+
+            #provera da li je pogodjenrezultat prodikcije
+            if (dobijeni_rezultat_predikcije[0] == tacan_rezultat_predikcije):
+                broj_tacno_pogodjenih += 1 #povecavamo broj tacno pogodjenih slika
+
+            tacni_rezultati.append(tacan_rezultat_predikcije)
+            dobijeni_rezultati.append(dobijeni_rezultat_predikcije[0])
+
+        ########### racunanje procenta tacnosti #########
+        accuracy = 100 * broj_tacno_pogodjenih / ukupan_broj_slika_testiranje
+        print("**** Accuracy je: ", accuracy, "%")
+
+        print("")
+        print("Dobijena tacnost po biblioteci")
+        tacnost_test = accuracy_score(tacni_rezultati, dobijeni_rezultati)
+        print(tacnost_test)
+        tacnosti_testiranje.append(tacnost_test)
+
+
+    ###### ISCRTAVANJE GRAFIKA TACNOSTI PO KLASAMA #####
+    iscrtavanje_graifika_tacnosti_po_klasama(dobijeni_rezultati, tacni_rezultati)
+
+    ##### odnos tacosti predvidjanja na trening i na test skupu #####
+    print("*** Prikaz ostvarenih tacnosti za razlicite vrednosti parametra C: ***")
+    print("Tacnost treniranja je: " + str(tacnosti_treniranje))
+    print("Tacnosti testiranje je: " + str(tacnosti_testiranje))
+
+    #grafik_tacnosti(c_vred, tacnosti_treniranje, tacnosti_testiranje)
 
